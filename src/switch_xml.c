@@ -57,11 +57,16 @@
 
 #include <switch.h>
 #include <switch_stun.h>
+#include "private/switch_core_pvt.h"
 #ifndef WIN32
 #include <sys/wait.h>
 #include <switch_private.h>
 #include <glob.h>
+#include <sys/types.h>
+#include <unistd.h>
 #else /* we're on windoze :( */
+/* process.h is required for getpid */
+#include <process.h>
 /* glob functions at end of this file */
 #include <apr_file_io.h>
 
@@ -1654,6 +1659,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	char *new_file = NULL;
 	char *new_file_tmp = NULL;
 	const char *abs, *absw;
+#ifndef WIN32
+	pid_t pid = getpid();
+#else
+	int pid = _getpid();
+#endif
 
 	abs = strrchr(file, '/');
 	absw = strrchr(file, '\\');
@@ -1665,12 +1675,24 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 
 	switch_mutex_lock(FILE_LOCK);
 
-	if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
+	if (switch_test_flag((&runtime), SCF_TEST_FSXML_PID)) {
+		if (!(new_file = switch_mprintf("%s%s%s-%lu.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs, (unsigned long)pid))) {
 		goto done;
+		}
+	} else {
+		if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
+		goto done;
+		}
 	}
 
-	if (!(new_file_tmp = switch_mprintf("%s%s%s.fsxml.tmp", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
-		goto done;
+	if (switch_test_flag((&runtime), SCF_TEST_FSXML_PID)) {
+		if (!(new_file_tmp = switch_mprintf("%s%s%s-%lu.fsxml.tmp", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs, (unsigned long)pid))) {
+			goto done;
+		}
+	} else {
+		if (!(new_file_tmp = switch_mprintf("%s%s%s.fsxml.tmp", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
+			goto done;
+		}
 	}
 
 	if ((write_fd = fopen(new_file_tmp, "w+")) == NULL) {

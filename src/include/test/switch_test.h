@@ -262,7 +262,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
 		if (fst_core) { \
-			fst_init_core_and_modload(NULL, NULL, 0, 0); /* shuts up compiler */ \
+			fst_init_core_and_modload(NULL, NULL, 0, SCF_TEST_FSXML_PID); /* shuts up compiler */ \
 		} \
 		{ \
 
@@ -311,8 +311,8 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 	} \
 	FCT_END()
 
-#define FST_CORE_BEGIN(confdir) FST_CORE_EX_BEGIN(confdir, 0)
-#define FST_CORE_DB_BEGIN(confdir) FST_CORE_EX_BEGIN(confdir, SCF_USE_SQL)
+#define FST_CORE_BEGIN(confdir) FST_CORE_EX_BEGIN(confdir, SCF_TEST_FSXML_PID)
+#define FST_CORE_DB_BEGIN(confdir) FST_CORE_EX_BEGIN(confdir, SCF_USE_SQL | SCF_TEST_FSXML_PID)
 
 /**
  * Minimal FS core load
@@ -326,7 +326,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		switch_memory_pool_t *fst_pool = NULL; \
 		int fst_timer_started = 0; \
 		fst_getenv_default("FST_SUPPRESS_UNUSED_STATIC_WARNING", NULL, SWITCH_FALSE); \
-		if (fst_init_core_and_modload(confdir, NULL, 1, 0) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
+		if (fst_init_core_and_modload(confdir, NULL, 1, SCF_TEST_FSXML_PID) == SWITCH_STATUS_SUCCESS) { /* minimal load */ \
 			fst_core = 1; \
 		} else { \
 			fprintf(stderr, "Failed to load FS core\n"); \
